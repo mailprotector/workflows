@@ -27,13 +27,22 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Configure AWS credentials
+      - name: Configure AWS credentials for first region
         id: config-aws
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Configure AWS credentials for second region
+        if: github.ref == 'refs/heads/main'
+        id: config-aws-2
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION_2 }}
   
       - name: Prepare
         id: prep
@@ -80,7 +89,7 @@ jobs:
           context: .
           builder: ${{ steps.buildx.outputs.name }}
           build-args: |
-            AWS_REGION=${{ secrets.AWS_REGION_2 }}
+            AWS_REGION=${{ steps.config-aws-2.outputs.aws-region }}
           file: ./Dockerfile
           push: false
           load: true
