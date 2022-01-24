@@ -33,7 +33,7 @@ jobs:
             AWS_ACCESS_KEY_ID: $STAGING_ACCESS_KEY_ID
             AWS_SECRET_ACCESS_KEY: $STAGING_SECRET_ACCESS_KEY
             AWS_REGION: $AWS_REGION_1
-        if: ${{ github.ref == 'refs/heads/xxxx' }}
+        if: ${{ github.ref == 'refs/heads/main' }}
           with:
             AWS_ACCESS_KEY_ID: $PRODUCTION_ACCESS_KEY_ID
             AWS_SECRET_ACCESS_KEY: $PRODUCTION_SECRET_ACCESS_KEY
