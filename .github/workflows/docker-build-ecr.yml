@@ -16,6 +16,8 @@ on:
         required: true
       AWS_REGION:
         required: true
+      AWS_REGION_2:
+        required: false
 
 jobs:
   build-release:
