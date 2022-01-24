@@ -26,21 +26,22 @@ jobs:
       - uses: actions/checkout@v2
   
       - name: Configure AWS staging credentials
-        if: build_env == "staging"
+        if: github.ref == 'refs/heads/staging'
         id: config-aws
         uses: aws-actions/configure-aws-credentials@v1
-          with:
-            AWS_ACCESS_KEY_ID: $STAGING_ACCESS_KEY_ID
-            AWS_SECRET_ACCESS_KEY: $STAGING_SECRET_ACCESS_KEY
-            AWS_REGION: $AWS_REGION_1
+        with:
+          AWS_ACCESS_KEY_ID: $STAGING_ACCESS_KEY_ID
+          AWS_SECRET_ACCESS_KEY: $STAGING_SECRET_ACCESS_KEY
+          AWS_REGION: $AWS_REGION_1
 
       - name: Configure AWS production credentials
         if: github.ref == 'refs/heads/main'
         id: config-aws
-          with:
-            AWS_ACCESS_KEY_ID: $PRODUCTION_ACCESS_KEY_ID
-            AWS_SECRET_ACCESS_KEY: $PRODUCTION_SECRET_ACCESS_KEY
-            AWS_REGION: $AWS_REGION_1
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          AWS_ACCESS_KEY_ID: $PRODUCTION_ACCESS_KEY_ID
+          AWS_SECRET_ACCESS_KEY: $PRODUCTION_SECRET_ACCESS_KEY
+          AWS_REGION: $AWS_REGION_1
   
       - name: Prepare
         id: prep
