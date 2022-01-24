@@ -30,18 +30,18 @@ jobs:
         id: config-aws-staging
         uses: aws-actions/configure-aws-credentials@v1
         with:
-          AWS_ACCESS_KEY_ID: $STAGING_ACCESS_KEY_ID
-          AWS_SECRET_ACCESS_KEY: $STAGING_SECRET_ACCESS_KEY
-          AWS_REGION: $AWS_REGION_1
+          aws-access-key-id: $STAGING_ACCESS_KEY_ID
+          aws-secret-access-key: $STAGING_SECRET_ACCESS_KEY
+          aws-region: $AWS_REGION_1
 
       - name: Configure AWS production credentials
         if: github.ref == 'refs/heads/main'
         id: config-aws-production
         uses: aws-actions/configure-aws-credentials@v1
         with:
-          AWS_ACCESS_KEY_ID: $PRODUCTION_ACCESS_KEY_ID
-          AWS_SECRET_ACCESS_KEY: $PRODUCTION_SECRET_ACCESS_KEY
-          AWS_REGION: $AWS_REGION_1
+          aws-access-key-id: $PRODUCTION_ACCESS_KEY_ID
+          aws-secret-access-key: $PRODUCTION_SECRET_ACCESS_KEY
+          aws-region: $AWS_REGION_1
   
       - name: Prepare
         id: prep
