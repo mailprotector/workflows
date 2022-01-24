@@ -68,13 +68,30 @@ jobs:
             ${{ runner.os }}-buildx
   
       - name: Build image
+        if: github.ref == 'refs/heads/staging'
         uses: docker/build-push-action@v2
         with:
           context: .
           builder: ${{ steps.buildx.outputs.name }}
           build-args: |
             #AWS_REGION=${{ secrets.AWS_REGION }}
-            AWS_REGION=${{ steps.config-aws-*.outputs.AWS_REGION }}
+            AWS_REGION=${{ steps.config-aws-staging.outputs.AWS_REGION }}
+          file: ./Dockerfile
+          push: false
+          load: true
+          tags: ${{ steps.prep.outputs.tagged_image }}
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache-new
+
+      - name: Build image
+        if: github.ref == 'refs/heads/main'
+        uses: docker/build-push-action@v2
+        with:
+          context: .
+          builder: ${{ steps.buildx.outputs.name }}
+          build-args: |
+            #AWS_REGION=${{ secrets.AWS_REGION }}
+            AWS_REGION=${{ steps.config-aws-main.outputs.AWS_REGION }}
           file: ./Dockerfile
           push: false
           load: true
