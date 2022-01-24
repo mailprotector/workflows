@@ -25,14 +25,17 @@ jobs:
     steps:
       - uses: actions/checkout@v2
   
-      - name: Configure AWS credentials
+      - name: Configure AWS staging credentials
         id: config-aws
-        uses: aws-actions/configure-aws-credentials@v1
         if: ${{ github.ref == 'refs/heads/staging' }}
+        uses: aws-actions/configure-aws-credentials@v1
           with:
             AWS_ACCESS_KEY_ID: $STAGING_ACCESS_KEY_ID
             AWS_SECRET_ACCESS_KEY: $STAGING_SECRET_ACCESS_KEY
             AWS_REGION: $AWS_REGION_1
+
+      - name: Configure AWS production credentials
+        id: config-aws
         if: ${{ github.ref == 'refs/heads/main' }}
           with:
             AWS_ACCESS_KEY_ID: $PRODUCTION_ACCESS_KEY_ID
@@ -69,7 +72,8 @@ jobs:
           context: .
           builder: ${{ steps.buildx.outputs.name }}
           build-args: |
-            AWS_REGION=${{ secrets.AWS_REGION }}
+            #AWS_REGION=${{ secrets.AWS_REGION }}
+            AWS_REGION=${{ steps.config-aws.outputs.AWS_REGION }}
           file: ./Dockerfile
           push: false
           load: true
