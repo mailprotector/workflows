@@ -75,7 +75,7 @@ jobs:
           builder: ${{ steps.buildx.outputs.name }}
           build-args: |
             #AWS_REGION=${{ secrets.AWS_REGION }}
-            AWS_REGION=${{ steps.config-aws-staging.outputs.AWS_REGION }}
+            AWS_REGION=${{ steps.config-aws-staging.outputs.aws-region }}
           file: ./Dockerfile
           push: false
           load: true
@@ -91,7 +91,7 @@ jobs:
           builder: ${{ steps.buildx.outputs.name }}
           build-args: |
             #AWS_REGION=${{ secrets.AWS_REGION }}
-            AWS_REGION=${{ steps.config-aws-main.outputs.AWS_REGION }}
+            AWS_REGION=${{ steps.config-aws-main.outputs.aws-region }}
           file: ./Dockerfile
           push: false
           load: true
