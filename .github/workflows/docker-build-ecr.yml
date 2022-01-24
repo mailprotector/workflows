@@ -21,7 +21,7 @@ on:
 
 jobs:
   build-release-region-1:
-    name: Build Docker image and push to ECR
+    name: Build Docker image and push to ECR of first region
     runs-on: ubuntu-latest
   
     steps:
@@ -95,7 +95,7 @@ jobs:
           mv /tmp/.buildx-cache-new/ /tmp/.buildx-cache/
 
   build-release-region-2:
-    name: Build Docker image and push to ECR
+    name: Build Docker image and push to ECR of second region
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
   
