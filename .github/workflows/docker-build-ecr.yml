@@ -28,12 +28,12 @@ jobs:
       - name: Configure AWS credentials
         id: config-aws
         uses: aws-actions/configure-aws-credentials@v1
-        if build_env == "staging":
+        if: ${{ github.ref == 'refs/heads/staging' }}
           with:
             AWS_ACCESS_KEY_ID: $STAGING_ACCESS_KEY_ID
             AWS_SECRET_ACCESS_KEY: $STAGING_SECRET_ACCESS_KEY
             AWS_REGION: $AWS_REGION_1
-        elif build_env == "production":
+        if: ${{ github.ref == 'refs/heads/xxxx' }}
           with:
             AWS_ACCESS_KEY_ID: $PRODUCTION_ACCESS_KEY_ID
             AWS_SECRET_ACCESS_KEY: $PRODUCTION_SECRET_ACCESS_KEY
