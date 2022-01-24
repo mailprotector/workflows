@@ -6,13 +6,18 @@ on:
       ECR_REPOSITORY:
         required: true
         type: string
-    secrets:
+      AWS_ACCOUNT_ID:
+        required: true
+        type: string
       AWS_ACCESS_KEY_ID:
         required: true
+        type: string
       AWS_SECRET_ACCESS_KEY:
         required: true
+        type: string
       AWS_REGION:
         required: true
+        type: string
 
 jobs:
   build-release:
@@ -26,9 +31,9 @@ jobs:
         id: config-aws
         uses: aws-actions/configure-aws-credentials@v1
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-access-key-id: ${{ inputs.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ inputs.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ inputs.AWS_REGION }}
   
       - name: Prepare
         id: prep
@@ -60,7 +65,7 @@ jobs:
           context: .
           builder: ${{ steps.buildx.outputs.name }}
           build-args: |
-            AWS_REGION=${{ secrets.AWS_REGION }}
+            AWS_REGION=${{ inputs.AWS_REGION }}
           file: ./Dockerfile
           push: false
           load: true
