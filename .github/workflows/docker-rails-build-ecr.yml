@@ -3,10 +3,10 @@ name: Build Docker image and push to ECR
 on:
   workflow_call: 
     inputs:
-      ECR_REPOSITORY:
+      RAILS_ENV:
         required: true
         type: string
-      build_env:
+      ECR_REPOSITORY:
         required: true
         type: string
     secrets:
@@ -21,7 +21,7 @@ jobs:
   build-release:
     name: Build Docker image and push to ECR
     runs-on: ubuntu-latest
-  
+
     steps:
       - uses: actions/checkout@v2
 
@@ -29,80 +29,69 @@ jobs:
         id: config-aws
         uses: aws-actions/configure-aws-credentials@v1
         with:
-          aws-access-key-id: $PRODUCTION_ACCESS_KEY_ID
-          aws-secret-access-key: $PRODUCTION_SECRET_ACCESS_KEY
-          aws-region: $AWS_REGION_1
-  
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
       - name: Prepare
         id: prep
         run: |
           TAG=$(echo $GITHUB_SHA | head -c7)
-          echo ::set-output name=tagged_image::${TAG}
-          echo ::set-output name=latest_image::latest
+          echo ::set-output name=tagged_image::${{ matrix.image_type }}-${TAG}
+          echo ::set-output name=latest_image::${{ matrix.image_type }}-latest
           echo ::set-output name=tag::${TAG}
-  
+
       - name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@master
-  
+
       - name: Login to Amazon ECR
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
-  
+
       - name: Cache Docker layers
         uses: actions/cache@v2
         with:
           path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          key: ${{ runner.os }}-${{ matrix.image_type }}-buildx-${{ github.sha }}
           restore-keys: |
-            ${{ runner.os }}-buildx
+            ${{ runner.os }}-${{ matrix.image_type }}-buildx
 
-      - name: Build image for first region
+      - name: Build image
         uses: docker/build-push-action@v2
         with:
           context: .
           builder: ${{ steps.buildx.outputs.name }}
           build-args: |
-            AWS_REGION=${{ steps.config-aws.outputs.aws-region }}
-          file: ./Dockerfile
+            RAILS_ENV=${{ inputs.RAILS_ENV }}
+            AWS_REGION=${{ secrets.AWS_REGION }}
+            SECRET_KEY_BASE=${{ secrets.SECRET_KEY_BASE }}
+          file: ./docker/${{ matrix.image_type }}/Dockerfile
           push: false
           load: true
           tags: ${{ steps.prep.outputs.tagged_image }}
-          cache-from: type=local,src=/tmp/.buildx-cache
-          cache-to: type=local,dest=/tmp/.buildx-cache-new
+          cache-from: type=local,src=/tmp/.buildx-cache/${{ matrix.image_type }}
+          cache-to: type=local,dest=/tmp/.buildx-cache-new/${{ matrix.image_type }}
 
-      - name: Build image for second region
-        if: github.ref == 'refs/heads/main'
-        uses: docker/build-push-action@v2
-        with:
-          context: .
-          builder: ${{ steps.buildx.outputs.name }}
-          build-args: |
-            AWS_REGION=${{ secrets.AWS_REGION_2 }}
-          file: ./Dockerfile
-          push: false
-          load: true
-          tags: ${{ steps.prep.outputs.tagged_image }}
-          cache-from: type=local,src=/tmp/.buildx-cache
-          cache-to: type=local,dest=/tmp/.buildx-cache-new
-
-  
       - name: Tag and Push image to AWS ECR as SHA
         env:
-          ECR_URL: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.ECR_REPOSITORY }}:${{ steps.prep.outputs.tagged_image }}
+          ECR_URL: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ steps.prep.outputs.tagged_image }}
         run: |
           docker tag ${{ steps.prep.outputs.tagged_image }} ${{ env.ECR_URL }}
           docker push ${{ env.ECR_URL }}
-  
+
       - name: Tag and Push image to AWS ECR as latest
-        #if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main'
         env:
-          ECR_URL: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.ECR_REPOSITORY }}:${{ steps.prep.outputs.latest_image }}
+          ECR_URL: ${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ steps.prep.outputs.latest_image }}
         run: |
           docker tag ${{ steps.prep.outputs.tagged_image }} ${{ env.ECR_URL }}
           docker push ${{ env.ECR_URL }}
-  
+
+        # Temp fix
+        # https://github.com/docker/build-push-action/issues/252
+        # https://github.com/moby/buildkit/issues/1896
       - name: Move cache
         run: |
-          rm -rf /tmp/.buildx-cache/
-          mv /tmp/.buildx-cache-new/ /tmp/.buildx-cache/
+          rm -rf /tmp/.buildx-cache/${{ matrix.image_type }}
+          mv /tmp/.buildx-cache-new/${{ matrix.image_type }} /tmp/.buildx-cache/${{ matrix.image_type }}
