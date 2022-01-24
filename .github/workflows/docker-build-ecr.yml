@@ -20,7 +20,7 @@ on:
         required: false
 
 jobs:
-  build-release:
+  build-release-region-1:
     name: Build Docker image and push to ECR
     runs-on: ubuntu-latest
   
@@ -34,15 +34,6 @@ jobs:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
-
-      - name: Configure AWS credentials for second region
-        if: github.ref == 'refs/heads/main'
-        id: config-aws-2
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION_2 }}
   
       - name: Prepare
         id: prep
@@ -82,6 +73,67 @@ jobs:
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache-new
 
+  
+      - name: Tag and Push image to AWS ECR as SHA
+        env:
+          ECR_URL: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.ECR_REPOSITORY }}:${{ steps.prep.outputs.tagged_image }}
+        run: |
+          docker tag ${{ steps.prep.outputs.tagged_image }} ${{ env.ECR_URL }}
+          docker push ${{ env.ECR_URL }}
+  
+      - name: Tag and Push image to AWS ECR as latest
+        #if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main'
+        env:
+          ECR_URL: ${{ steps.login-ecr.outputs.registry }}/${{ inputs.ECR_REPOSITORY }}:${{ steps.prep.outputs.latest_image }}
+        run: |
+          docker tag ${{ steps.prep.outputs.tagged_image }} ${{ env.ECR_URL }}
+          docker push ${{ env.ECR_URL }}
+  
+      - name: Move cache
+        run: |
+          rm -rf /tmp/.buildx-cache/
+          mv /tmp/.buildx-cache-new/ /tmp/.buildx-cache/
+
+  build-release-region-2:
+    name: Build Docker image and push to ECR
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+  
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Configure AWS credentials for second region
+        id: config-aws
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION_2 }}
+  
+      - name: Prepare
+        id: prep
+        run: |
+          TAG=$(echo $GITHUB_SHA | head -c7)
+          echo ::set-output name=tagged_image::${TAG}
+          echo ::set-output name=latest_image::latest
+          echo ::set-output name=tag::${TAG}
+  
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@master
+  
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+  
+      - name: Cache Docker layers
+        uses: actions/cache@v2
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx
+
       - name: Build image for second region
         if: github.ref == 'refs/heads/main'
         uses: docker/build-push-action@v2
@@ -89,7 +141,7 @@ jobs:
           context: .
           builder: ${{ steps.buildx.outputs.name }}
           build-args: |
-            AWS_REGION=${{ steps.config-aws-2.outputs.aws-region }}
+            AWS_REGION=${{ steps.config-aws.outputs.aws-region }}
           file: ./Dockerfile
           push: false
           load: true
