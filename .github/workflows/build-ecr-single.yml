@@ -6,21 +6,19 @@ on:
       ECR_REPOSITORY:
         required: true
         type: string
-      build_env:
-        required: true
-        type: string
     secrets:
       AWS_IAM_ROLE_ARN:
         required: true
         type: string
       AWS_REGION:
         required: true
+        type: string
 
 jobs:
   build-release:
     name: Build Docker image and push to ECR
     runs-on: ubuntu-latest
-      
+
     steps:
       - uses: actions/checkout@v2
 
