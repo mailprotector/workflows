@@ -12,6 +12,10 @@ on:
       AWS_REGION:
         required: true
 
+permissions:
+  id-token: write # required to use OIDC authentication
+  contents: read # required to checkout the code from the repo
+
 jobs:
   build-release:
     name: Build Docker image and push to ECR
