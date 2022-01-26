@@ -19,7 +19,8 @@ on:
 jobs:
   build-release:
     name: Build Docker image and push to ECR
-  
+    runs-on: ubuntu-latest
+      
     steps:
       - uses: actions/checkout@v2
 
